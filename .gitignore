@@ -1,0 +1,5 @@
+node_modules/
+.env
+backend/prisma/dev.db*
+frontend/dist
+package-lock.json

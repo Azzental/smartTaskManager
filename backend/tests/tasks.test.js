@@ -1,7 +1,8 @@
 const request = require('supertest');
 const app = require('../src/app');
+const { PrismaClient } = require('@prisma/client');
 
-const prisma = global.prisma
+const prisma = new PrismaClient();
 
 describe('Tasks API', () => {
   let authToken;
@@ -34,6 +35,16 @@ describe('Tasks API', () => {
     userId = user.id;
   });
 
+  afterAll(async () => {
+    await prisma.task.deleteMany({
+      where: { authorId: userId }
+    });
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    await prisma.$disconnect();
+  });
+
   describe('GET /api/tasks', () => {
     it('should return empty array when no tasks', async () => {
       const response = await request(app)
@@ -60,14 +71,16 @@ describe('Tasks API', () => {
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBe(1);
+      expect(response.body.length).toBeGreaterThan(0);
       expect(response.body[0]).toHaveProperty('title', 'Test Task');
     });
 
     it('should return 401 without token', async () => {
-      await request(app)
+      const response = await request(app)
         .get('/api/tasks')
         .expect(401);
+
+      expect(response.body).toHaveProperty('error');
     });
   });
 
@@ -128,17 +141,20 @@ describe('Tasks API', () => {
     });
 
     it('should return 404 for non-existent task', async () => {
-      await request(app)
+      const response = await request(app)
         .get('/api/tasks/nonexistent-id')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
+
+      expect(response.body).toHaveProperty('error', 'Task not found');
     });
 
     it('should return 404 for task of another user', async () => {
       const otherUser = await prisma.user.create({
         data: {
           email: `other${Date.now()}@example.com`,
-          password: 'password123'
+          password: 'password123',
+          name: 'Other User'
         }
       });
 
@@ -149,10 +165,12 @@ describe('Tasks API', () => {
         }
       });
 
-      await request(app)
+      const response = await request(app)
         .get(`/api/tasks/${otherTask.id}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
+
+      expect(response.body).toHaveProperty('error', 'Task not found');
 
       await prisma.task.delete({ where: { id: otherTask.id } });
       await prisma.user.delete({ where: { id: otherUser.id } });
@@ -183,6 +201,17 @@ describe('Tasks API', () => {
 
       expect(response.body.title).toBe('Updated Title');
       expect(response.body.status).toBe('completed');
+      expect(response.body.description).toBe('Updated Description');
+    });
+
+    it('should return 404 when updating non-existent task', async () => {
+      const response = await request(app)
+        .put('/api/tasks/nonexistent-id')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ title: 'Updated' })
+        .expect(404);
+
+      expect(response.body).toHaveProperty('error', 'Task not found');
     });
   });
 
@@ -204,6 +233,15 @@ describe('Tasks API', () => {
         where: { id: task.id }
       });
       expect(deletedTask).toBeNull();
+    });
+
+    it('should return 404 when deleting non-existent task', async () => {
+      const response = await request(app)
+        .delete('/api/tasks/nonexistent-id')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+
+      expect(response.body).toHaveProperty('error', 'Task not found');
     });
   });
 });

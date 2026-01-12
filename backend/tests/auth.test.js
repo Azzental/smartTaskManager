@@ -1,14 +1,27 @@
 const request = require('supertest');
 const app = require('../src/app');
+const { PrismaClient } = require('@prisma/client');
 
-const prisma = global.prisma
+const prisma = new PrismaClient();
 
 describe('Auth API', () => {
+  const testEmail = `test${Date.now()}@example.com`;
   const testUser = {
-    email: `test${Date.now()}@example.com`,
+    email: testEmail,
     password: 'password123',
     name: 'Test User'
   };
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          contains: '@example.com'
+        }
+      }
+    });
+    await prisma.$disconnect();
+  });
 
   describe('POST /api/auth/register', () => {
     it('should register a new user successfully', async () => {
@@ -61,6 +74,7 @@ describe('Auth API', () => {
 
       expect(response.body).toHaveProperty('token');
       expect(typeof response.body.token).toBe('string');
+      expect(response.body.token.length).toBeGreaterThan(10);
     });
 
     it('should return 401 with invalid password', async () => {

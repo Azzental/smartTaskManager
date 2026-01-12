@@ -15,7 +15,14 @@ const schemas = {
     description: yup.string().optional(),
     status: yup.string().oneOf(['todo', 'in_progress', 'completed']).optional(),
     priority: yup.string().oneOf(['low', 'medium', 'high']).optional(),
-    deadline: yup.date().optional(),
+    deadline: yup.date().nullable().optional(),
+  }),
+  taskUpdate: yup.object({
+    title: yup.string().min(3).optional(),
+    description: yup.string().optional(),
+    status: yup.string().oneOf(['todo', 'in_progress', 'completed']).optional(),
+    priority: yup.string().oneOf(['low', 'medium', 'high']).optional(),
+    deadline: yup.date().nullable().optional(),
   }),
 };
 
@@ -24,7 +31,11 @@ const validate = (type) => async (req, res, next) => {
     await schemas[type].validate(req.body, { abortEarly: false });
     next();
   } catch (err) {
-    res.status(400).json({ errors: err.errors });
+    next({ 
+      status: 400, 
+      message: 'Validation failed', 
+      errors: err.errors 
+    });
   }
 };
 

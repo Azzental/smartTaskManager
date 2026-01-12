@@ -1,99 +1,281 @@
 openapi: 3.0.0
 info:
   title: Smart Task Manager API
+  description: API для управления задачами с аутентификацией JWT
   version: 1.0.0
+  contact:
+    name: API Support
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server
 paths:
   /api/auth/register:
     post:
-      summary: Register user
+      summary: Регистрация нового пользователя
+      tags: [Authentication]
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               required: [email, password]
               properties:
-                email: { type: string }
-                password: { type: string }
-                name: { type: string }
+                email: 
+                  type: string
+                  format: email
+                  example: user@example.com
+                password: 
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: password123
+                name: 
+                  type: string
+                  example: John Doe
       responses:
-        '201': { description: User created }
+        '201':
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User created
+                  userId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Неверные данные или email уже существует
   /api/auth/login:
     post:
-      summary: Login user
+      summary: Аутентификация пользователя
+      tags: [Authentication]
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               required: [email, password]
               properties:
-                email: { type: string }
-                password: { type: string }
+                email: 
+                  type: string
+                  format: email
+                  example: user@example.com
+                password: 
+                  type: string
+                  format: password
+                  example: password123
       responses:
-        '200': { description: Token returned }
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Неверные учетные данные
   /api/tasks:
     get:
-      summary: Get tasks
-      security: [{ bearerAuth: [] }]
+      summary: Получить список задач
+      tags: [Tasks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Фильтр по статусу задачи
+          schema:
+            type: string
+            enum: [todo, in_progress, completed]
       responses:
-        '200': { description: Tasks list }
+        '200':
+          description: Список задач пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '401':
+          description: Неавторизованный доступ
     post:
-      summary: Create task
-      security: [{ bearerAuth: [] }]
+      summary: Создать новую задачу
+      tags: [Tasks]
+      security:
+        - bearerAuth: []
       requestBody:
+        required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Task' }
+            schema:
+              $ref: '#/components/schemas/TaskInput'
       responses:
-        '201': { description: Task created }
+        '201':
+          description: Задача успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Неверные данные
+        '401':
+          description: Неавторизованный доступ
   /api/tasks/{id}:
     get:
-      summary: Get task by ID
-      security: [{ bearerAuth: [] }]
+      summary: Получить задачу по ID
+      tags: [Tasks]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema: { type: string }
+          schema:
+            type: string
+            format: uuid
+          description: ID задачи
       responses:
-        '200': { description: Task details }
+        '200':
+          description: Информация о задаче
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Задача не найдена
+        '401':
+          description: Неавторизованный доступ
     put:
-      summary: Update task
-      security: [{ bearerAuth: [] }]
+      summary: Обновить задачу
+      tags: [Tasks]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema: { type: string }
+          schema:
+            type: string
+            format: uuid
+          description: ID задачи
       requestBody:
+        required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Task' }
+            schema:
+              $ref: '#/components/schemas/TaskInput'
       responses:
-        '200': { description: Task updated }
+        '200':
+          description: Задача успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Задача не найдена
+        '401':
+          description: Неавторизованный доступ
     delete:
-      summary: Delete task
-      security: [{ bearerAuth: [] }]
+      summary: Удалить задачу
+      tags: [Tasks]
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema: { type: string }
+          schema:
+            type: string
+            format: uuid
+          description: ID задачи
       responses:
-        '200': { description: Task deleted }
+        '200':
+          description: Задача успешно удалена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Task deleted
+        '404':
+          description: Задача не найдена
+        '401':
+          description: Неавторизованный доступ
 components:
   schemas:
     Task:
       type: object
       properties:
-        title: { type: string }
-        description: { type: string }
-        status: { type: string, enum: [todo, in_progress, completed] }
-        priority: { type: string, enum: [low, medium, high] }
-        deadline: { type: string, format: date-time }
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        title:
+          type: string
+          example: Complete project documentation
+        description:
+          type: string
+          example: Write comprehensive documentation for the API
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+          example: in_progress
+        priority:
+          type: string
+          enum: [low, medium, high]
+          example: high
+        deadline:
+          type: string
+          format: date-time
+          example: 2024-12-31T23:59:59Z
+        authorId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, title, status, priority, authorId, createdAt, updatedAt]
+    TaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          example: Complete project documentation
+        description:
+          type: string
+          example: Write comprehensive documentation for the API
+        status:
+          type: string
+          enum: [todo, in_progress, completed]
+          example: in_progress
+        priority:
+          type: string
+          enum: [low, medium, high]
+          example: high
+        deadline:
+          type: string
+          format: date-time
+          example: 2024-12-31T23:59:59Z
+      required: [title]
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Введите JWT токен полученный при авторизации

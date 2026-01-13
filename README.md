@@ -1,17 +1,14 @@
 # Simple Task Manager
-### Рабочий fullstack проект с REST API
+### REST API fullstack (пока что backend) проект
 
 ## Требования
-- JWT Аутентификация (регистрация/логин)
+- JWT аутентификация с защитой от брутфорс атак
 - CRUD задач с фильтрами по статусу
 - Безопасность (Helmet, Rate Limit, JWT)
 - Документация API (Swagger)
 - Тесты (Jest + Supertest)
 - Валидация входных данных (Yup) (опционально)
 - Контейнеризация Docker (опционально)
-
-## Структура БД
-См. prisma/schema.prisma
 
 ## Запуск
 ### Локально
@@ -21,22 +18,52 @@
 ### С контейнерами Docker
 `docker-compose up --build`
 
-## API Docs / Swagger
-http://localhost:5000/api-docs
-
 ## Тесты
 `cd backend && npm test`
 
-### Задачи и промежуточные этапы
+## API Docs / Swagger
+http://localhost:5000/api-docs
+
+## Проверка на работоспособность
+http://localhost:5000/health
+
+### Авторизация вручную
+```
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "yourmail@example.com",
+    "password": "yourpasswordhere",
+    "name": "Your Name"
+  }'
+```
+```
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "yourmail@example.com",
+    "password": "yourpasswordhere"
+  }'
+```
+### Все взаимодействия с сервисом происходят с использованием JWT токена в заголовке
+```
+curl -X GET http://localhost:5000/api/users/profile \
+  -H "Authorization: Bearer <your-jwt-token>"
+```
+
+### Структура БД
+См. prisma/schema.prisma
+
+## Задачи и промежуточные этапы
 - [x] Инициализация проекта
 - [x] Структура файлов
-- [x] L--> Разделение на back и front
+- [x] └──> Разделение на back и front
 - [x] Сформированные сущности в БД
-- [x] L--> Task
-- [x] L--> User
-- [ ] L--> Tag
+- [x] ├──> Task
+- [x] ├──> User
+- [ ] └──> Tag
 - [x] Основные ручки
-- [x] L--> Временные заглушки на endpoints
+- [x] └──> Временные заглушки на endpoints
 - [x] Аутентификация и регистрация
 - [x] Авторизация пользователя
 - [x] Общие меры безопасности
@@ -44,7 +71,8 @@ http://localhost:5000/api-docs
 - [x] Подключение JWT
 - [x] SwaggerAPI документация
 - [x] Тестирование API
-- [ ] L--> Исправление неработающих проверок
+- [x] L--> Исправление неработающих проверок
+- [ ] Документация проекта
 - [ ] Фикс frontend-части проекта
 - [ ] github workflows
-- [ ] Документация проекта
+

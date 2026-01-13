@@ -20,6 +20,19 @@ try {
 const app = express();
 
 app.use(helmet());
+app.use(helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      "style-src": ["'self'", "'unsafe-inline'"],
+      "img-src": ["'self'", "data:", "https:", "http:"],
+      "connect-src": [
+        "'self'",
+        "http://localhost:5000",
+        "ws://localhost:5000"
+      ],
+    },
+  }));
 app.use(cors());
 app.use(express.json());
 

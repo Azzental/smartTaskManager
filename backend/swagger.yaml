@@ -250,29 +250,6 @@ components:
           type: string
           format: date-time
       required: [id, title, status, priority, authorId, createdAt, updatedAt]
-    TaskInput:
-      type: object
-      properties:
-        title:
-          type: string
-          minLength: 3
-          example: Complete project documentation
-        description:
-          type: string
-          example: Write comprehensive documentation for the API
-        status:
-          type: string
-          enum: [todo, in_progress, completed]
-          example: in_progress
-        priority:
-          type: string
-          enum: [low, medium, high]
-          example: high
-        deadline:
-          type: string
-          format: date-time
-          example: 2024-12-31T23:59:59Z
-      required: [title]
   securitySchemes:
     bearerAuth:
       type: http

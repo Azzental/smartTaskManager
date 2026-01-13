@@ -1,27 +1,15 @@
 const request = require('supertest');
 const app = require('../src/app');
-const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const prisma = global.prisma;
 
 describe('Auth API', () => {
-  const testEmail = `test${Date.now()}@example.com`;
+  const getTestEmail = () => `test${Date.now()}${Math.random()}@example.com`;
   const testUser = {
-    email: testEmail,
+    email: getTestEmail(),
     password: 'password123',
     name: 'Test User'
   };
-
-  afterAll(async () => {
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          contains: '@example.com'
-        }
-      }
-    });
-    await prisma.$disconnect();
-  });
 
   describe('POST /api/auth/register', () => {
     it('should register a new user successfully', async () => {
@@ -48,11 +36,6 @@ describe('Auth API', () => {
     });
 
     it('should return 400 for duplicate email', async () => {
-      await request(app)
-        .post('/api/auth/register')
-        .send(testUser)
-        .expect(201);
-
       const response = await request(app)
         .post('/api/auth/register')
         .send(testUser)
@@ -63,12 +46,25 @@ describe('Auth API', () => {
   });
 
   describe('POST /api/auth/login', () => {
+    const testCorrectUser = {
+    email: 'correctmail@example.com',
+    password: 'correct123',
+    name: 'Test Correct User'
+    };
+
+    
+
     it('should login with valid credentials', async () => {
+      const registerResponse = await request(app)
+        .post('/api/auth/register')
+        .send(testCorrectUser)
+        .expect(201);
+      
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: testUser.email,
-          password: testUser.password
+          email: testCorrectUser.email,
+          password: testCorrectUser.password
         })
         .expect(200);
 

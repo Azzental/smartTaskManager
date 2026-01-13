@@ -1,8 +1,7 @@
 const request = require('supertest');
 const app = require('../src/app');
-const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const prisma = global.prisma;
 
 describe('Tasks API', () => {
   let authToken;
@@ -33,16 +32,6 @@ describe('Tasks API', () => {
       where: { email: testEmail }
     });
     userId = user.id;
-  });
-
-  afterAll(async () => {
-    await prisma.task.deleteMany({
-      where: { authorId: userId }
-    });
-    await prisma.user.delete({
-      where: { id: userId }
-    });
-    await prisma.$disconnect();
   });
 
   describe('GET /api/tasks', () => {

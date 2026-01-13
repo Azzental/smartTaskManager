@@ -1,9 +1,8 @@
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const app = require('../src/app');
-const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
+const prisma = global.prisma;
 
 describe('Middleware', () => {
   afterAll(async () => {

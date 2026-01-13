@@ -32,9 +32,6 @@ beforeAll(async () => {
   console.log('Setting up test database...');
   
   try {
-    if (fs.existsSync(dbPath)) {
-      fs.unlinkSync(dbPath);
-    }
     
     await prisma.$connect();
     
@@ -65,7 +62,7 @@ beforeAll(async () => {
       );
     `);
     
-    await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = ON;`);
+    // await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = ON;`);
     
     console.log('Test database setup completed');
   } catch (error) {
@@ -74,15 +71,11 @@ beforeAll(async () => {
   }
 });
 
-beforeEach(async () => {
-  await prisma.task.deleteMany({});
-  await prisma.user.deleteMany({});
-});
 
 afterAll(async () => {
-  await prisma.$disconnect();
-  
-  if (fs.existsSync(dbPath)) {
-    fs.unlinkSync(dbPath);
-  }
+  try {
+    await prisma.$executeRawUnsafe('DELETE FROM Task');
+    await prisma.$executeRawUnsafe('DELETE FROM User');
+    await prisma.$disconnect();
+  } catch (error) {}
 });
